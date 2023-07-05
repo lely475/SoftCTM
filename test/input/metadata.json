@@ -1,0 +1,27 @@
+[
+    {
+      "slide_name": "TCGA-A3-3328-01Z-00-DX1.8FA7DFCD-D6FD-4950-9E44-E5AB0B91E33D",
+      "cell": {
+        "x_start": 59847,
+        "y_start": 45290,
+        "x_end": 60655,
+        "y_end": 46098,
+        "resized_mpp_x": 0.19426718377508223,
+        "resized_mpp_y": 0.19426718377508223
+      },
+      "tissue": {
+        "x_start": 58230,
+        "y_start": 45290,
+        "x_end": 61465,
+        "y_end": 48525,
+        "resized_mpp_x": 0.7777900241489988,
+        "resized_mpp_y": 0.7777900241489988
+      },
+      "patch_x_offset": 0.625,
+      "patch_y_offset": 0.125,
+      "mpp_x": 0.24619999527931213,
+      "mpp_y": 0.24619999527931213,
+      "organ": "kidney",
+      "subset": "train"
+    }
+]

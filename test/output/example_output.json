@@ -1,0 +1,297 @@
+{
+    "type": "Multiple points",
+    "points": [
+        {
+            "name": "image_0",
+            "point": [
+                128,
+                620,
+                1
+            ],
+            "probability": 1.0
+        },
+        {
+            "name": "image_0",
+            "point": [
+                128,
+                621,
+                1
+            ],
+            "probability": 1.0
+        },
+        {
+            "name": "image_0",
+            "point": [
+                129,
+                620,
+                1
+            ],
+            "probability": 1.0
+        },
+        {
+            "name": "image_0",
+            "point": [
+                129,
+                621,
+                1
+            ],
+            "probability": 1.0
+        },
+        {
+            "name": "image_0",
+            "point": [
+                130,
+                619,
+                1
+            ],
+            "probability": 1.0
+        },
+        {
+            "name": "image_0",
+            "point": [
+                130,
+                620,
+                1
+            ],
+            "probability": 1.0
+        },
+        {
+            "name": "image_0",
+            "point": [
+                130,
+                621,
+                1
+            ],
+            "probability": 1.0
+        },
+        {
+            "name": "image_0",
+            "point": [
+                131,
+                619,
+                1
+            ],
+            "probability": 1.0
+        },
+        {
+            "name": "image_0",
+            "point": [
+                131,
+                620,
+                1
+            ],
+            "probability": 1.0
+        },
+        {
+            "name": "image_0",
+            "point": [
+                131,
+                621,
+                1
+            ],
+            "probability": 1.0
+        },
+        {
+            "name": "image_0",
+            "point": [
+                132,
+                620,
+                1
+            ],
+            "probability": 1.0
+        },
+        {
+            "name": "image_0",
+            "point": [
+                229,
+                790,
+                1
+            ],
+            "probability": 1.0
+        },
+        {
+            "name": "image_0",
+            "point": [
+                331,
+                871,
+                1
+            ],
+            "probability": 1.0
+        },
+        {
+            "name": "image_0",
+            "point": [
+                331,
+                873,
+                1
+            ],
+            "probability": 1.0
+        },
+        {
+            "name": "image_0",
+            "point": [
+                332,
+                870,
+                1
+            ],
+            "probability": 1.0
+        },
+        {
+            "name": "image_0",
+            "point": [
+                332,
+                871,
+                1
+            ],
+            "probability": 1.0
+        },
+        {
+            "name": "image_0",
+            "point": [
+                332,
+                872,
+                1
+            ],
+            "probability": 1.0
+        },
+        {
+            "name": "image_0",
+            "point": [
+                332,
+                873,
+                1
+            ],
+            "probability": 1.0
+        },
+        {
+            "name": "image_0",
+            "point": [
+                333,
+                871,
+                1
+            ],
+            "probability": 1.0
+        },
+        {
+            "name": "image_0",
+            "point": [
+                333,
+                872,
+                1
+            ],
+            "probability": 1.0
+        },
+        {
+            "name": "image_0",
+            "point": [
+                333,
+                873,
+                1
+            ],
+            "probability": 1.0
+        },
+        {
+            "name": "image_0",
+            "point": [
+                335,
+                873,
+                1
+            ],
+            "probability": 1.0
+        },
+        {
+            "name": "image_0",
+            "point": [
+                336,
+                872,
+                1
+            ],
+            "probability": 1.0
+        },
+        {
+            "name": "image_0",
+            "point": [
+                336,
+                873,
+                1
+            ],
+            "probability": 1.0
+        },
+        {
+            "name": "image_0",
+            "point": [
+                336,
+                874,
+                1
+            ],
+            "probability": 1.0
+        },
+        {
+            "name": "image_0",
+            "point": [
+                337,
+                872,
+                1
+            ],
+            "probability": 1.0
+        },
+        {
+            "name": "image_0",
+            "point": [
+                337,
+                873,
+                1
+            ],
+            "probability": 1.0
+        },
+        {
+            "name": "image_0",
+            "point": [
+                337,
+                874,
+                1
+            ],
+            "probability": 1.0
+        },
+        {
+            "name": "image_0",
+            "point": [
+                338,
+                872,
+                1
+            ],
+            "probability": 1.0
+        },
+        {
+            "name": "image_0",
+            "point": [
+                338,
+                873,
+                1
+            ],
+            "probability": 1.0
+        },
+        {
+            "name": "image_0",
+            "point": [
+                339,
+                872,
+                1
+            ],
+            "probability": 1.0
+        },
+        {
+            "name": "image_0",
+            "point": [
+                932,
+                744,
+                1
+            ],
+            "probability": 1.0
+        }
+    ],
+    "version": {
+        "major": 1,
+        "minor": 0
+    }
+}

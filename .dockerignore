@@ -1,3 +1,8 @@
 test/
 .git/
+.gitignore
 *.tar.gz
+not_shared/
+.vscode/
+*.dockerignore
+*Dockerfile

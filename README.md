@@ -96,9 +96,6 @@ def process_patch_pair(cell_patch, tissue_patch, pair_id, meta_dataset):
 
 To guide participants with a real-world example, we provide a simple baseline algorithm that uses the U-Net architecture. For more details, please visit `ocelot23algo/user/unet_example/`.
 
-# Submitting to GC
-
-To submit your algorithm to the GC platform, you'll need to export the docker container with all the required ingredients to run your inference. We have three simple bash scripts that might be helpful for you.
 
 ## Build your docker image
 
@@ -110,7 +107,7 @@ bash build.sh
 
 ## Testing before submitting to GC
 
-Before submitting your containers to GC, make sure a simple test works successfully in your local machine. The script `test.sh` will create the image, run a container and verify that the output file `cell_classification.json` is generated at the designated directory. To do so, simply run the following command:
+The script `test.sh` will create the image, run a container and verify that the output file `cell_classification.json` is generated at the designated directory. To do so, simply run the following command:
 
 ```bash
 bash test.sh
@@ -118,7 +115,7 @@ bash test.sh
 
 ## Export algorithm docker image
 
-Generate the `tar` file to be uploaded to GC with the command:
+Generate the `tar` file containing the algorithm docker image:
 
 ```bash
 bash export.sh

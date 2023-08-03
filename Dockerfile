@@ -1,9 +1,19 @@
-FROM python:3.9-slim
+FROM nvidia/cuda:11.6.2-runtime-ubuntu20.04
 
+ENV PATH /usr/local/nvidia/bin:/usr/local/cuda/bin:${PATH}
 RUN groupadd -r user && useradd -m --no-log-init -r -g user user
 
+RUN apt-get -y update \
+  && apt-get install -y software-properties-common \
+  && apt-get -y update \
+  && add-apt-repository ppa:deadsnakes/ppa
+RUN apt-get -y update
+RUN apt-get -y install python3.9
+RUN apt-get -y install python3-pip
+RUN ln -s /usr/bin/python3 /usr/bin/python
+
 RUN mkdir -p /opt/app /input /output \
-    && chown user:user /opt/app /input /output
+  && chown user:user /opt/app /input /output
 
 USER user
 WORKDIR /opt/app

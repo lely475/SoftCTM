@@ -10,6 +10,10 @@ Detecting and classifying cells in histopathology whole-slide images is a core t
 
 ![inference_pipeline](https://github.com/lely475/ocelot23algo/assets/62755943/4237bdc8-d412-4bbf-926d-067a211b3aaf)
 
+## Download pretrained models
+Please download our pretrained tissue segmentation and cell detection model [here](https://1drv.ms/f/s!Aqry0_PzRNA6gdEhYsuOSooj7PP-Gg?e=9kQiE2).
+Create a folder `onnx` on the top-level of the repository and add the models there.
+
 ## Build the docker image
 
 Build our docker image:

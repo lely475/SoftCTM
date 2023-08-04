@@ -8,7 +8,7 @@ For more information check out [OCELOT Challenge 2023](https://ocelot2023.grand-
 ## Our algorithm
 Detecting and classifying cells in histopathology whole-slide images is a core task in computational pathology, as it provides valuable insight into the tumor micro environment. In this work we investigate the impact of ground truth formats on the models performance. Additionally, cell-tissue interactions are considered by providing tissue segmentation predictions as input to the cell detection model. We find that a soft, probability-map instance segmentation ground truth leads to best model performance. Combined with cell-tissue interaction and test-time augmentation we achieve 0.7045 mean F1-Score on the Overlapped Cell On Tissue (OCELOT) validation set.
 
-
+![inference_pipeline](https://github.com/lely475/ocelot23algo/assets/62755943/4237bdc8-d412-4bbf-926d-067a211b3aaf)
 
 ## Build the docker image
 

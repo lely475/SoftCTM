@@ -40,7 +40,7 @@ bash export.sh
 
 ## Run inference
 
-You can run inference using the algorithm docker image with the following command, add your desired input and output paths were indicated:
+You can run inference using the algorithm docker image with the following command, add your desired input and output paths where indicated:
 ```bash
 docker run --rm \
         --memory="12g" \

@@ -38,6 +38,36 @@ Generate the `tar` file containing the algorithm docker image:
 bash export.sh
 ```
 
+## Run inference
+
+You can run inference using the algorithm docker image with the following command, add your desired input and output paths were indicated:
+```bash
+docker run --rm \
+        --memory="12g" \
+        --memory-swap="12g" \
+        --network="none" \
+        --cap-drop="ALL" \
+        --security-opt="no-new-privileges" \
+        --shm-size="128m" \
+        --pids-limit="256" \
+        -v your-input-path:/input \
+        -v your-output-path:/output/ \
+        ocelot23algo
+```
+
+The output of the algorithm is a json file that logs all detected cells for each image in the format:
+```
+{
+    "name": "image_id",
+    "point": [
+        x,
+        y,
+        class_label
+    ],
+    "probability": confidence_score
+}
+```
+
 # Credits
 The source code and description is adapted from Lunits [OcelotAlgo23 repository](https://github.com/lunit-io/ocelot23algo).
 ```

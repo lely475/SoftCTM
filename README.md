@@ -1,9 +1,9 @@
 ![OCELOT LOGO](logo/ocelot_banner.png)
 
-# Cell detection by soft instance segmentation and consideration of cell-tissue interaction for the OCELOT 2023 Challenge
+# SoftCTM: Cell detection by soft instance segmentation and consideration of cell-tissue interaction
  
 In this repository, you can find the source code to recreate our [Grand Challenge OCELOT 23](https://ocelot2023.grand-challenge.org/) **algorithm container**. 
-For more information check out [OCELOT Challenge 2023](https://ocelot2023.grand-challenge.org/) and [OCELOT dataset](https://lunit-io.github.io/research/publications/ocelot/):
+For more information check out our [paper on the method](https://arxiv.org/abs/2312.12151), as well as [OCELOT Challenge 2023](https://ocelot2023.grand-challenge.org/) and [OCELOT dataset](https://lunit-io.github.io/research/publications/ocelot/):
 
 ## Our algorithm
 Detecting and classifying cells in histopathology whole-slide images is a core task in computational pathology, as it provides valuable insight into the tumor micro environment. In this work we investigate the impact of ground truth formats on the models performance. Additionally, cell-tissue interactions are considered by providing tissue segmentation predictions as input to the cell detection model. We find that a soft, probability-map instance segmentation ground truth leads to best model performance. Combined with cell-tissue interaction and test-time augmentation we achieve 3rd place on the Overlapped Cell On Tissue (OCELOT) test set with mean F1-Score 0.7172.
@@ -78,5 +78,18 @@ The source code and description is adapted from Lunits [OcelotAlgo23 repository]
     month = {June},
     year = {2023},
     pages = {23902-23912}
+}
+```
+
+# Code Usage
+If you find this code helpful to your work and want to use it, please cite:
+```
+@misc{schoenpflug2023softctm,
+      title={SoftCTM: Cell detection by soft instance segmentation and consideration of cell-tissue interaction}, 
+      author={Lydia A. Schoenpflug and Viktor H. Koelzer},
+      year={2023},
+      eprint={2312.12151},
+      archivePrefix={arXiv},
+      primaryClass={eess.IV}
 }
 ```

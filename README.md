@@ -1,9 +1,10 @@
 ![OCELOT LOGO](logo/ocelot_banner.png)
 
 # SoftCTM: Cell detection by soft instance segmentation and consideration of cell-tissue interaction
- 
-In this repository, you can find the source code to recreate our [Grand Challenge OCELOT 23](https://ocelot2023.grand-challenge.org/) **algorithm container**. 
-For more information check out our [paper on the method](https://arxiv.org/abs/2312.12151), as well as [OCELOT Challenge 2023](https://ocelot2023.grand-challenge.org/) and [OCELOT dataset](https://lunit-io.github.io/research/publications/ocelot/):
+
+In this repository, you can find the source code to recreate our [Grand Challenge OCELOT 23](https://ocelot2023.grand-challenge.org/) **algorithm container**.
+It provides a pan-cancer (trained on kidney, head-and-neck, prostate, stomach, endometrium, and bladder samples) deep-learning model for detecting tumor and background cells in H&E whole slide images. This makes it directly applicable for tasks such as tumor content estimation.
+For more information check out our [paper on the method](https://arxiv.org/abs/2312.12151), as well as [OCELOT Challenge 2023](https://ocelot2023.grand-challenge.org/) and [OCELOT dataset](https://lunit-io.github.io/research/publications/ocelot/).
 
 ## Our algorithm
 Detecting and classifying cells in histopathology whole-slide images is a core task in computational pathology, as it provides valuable insight into the tumor micro environment. In this work we investigate the impact of ground truth formats on the models performance. Additionally, cell-tissue interactions are considered by providing tissue segmentation predictions as input to the cell detection model. We find that a soft, probability-map instance segmentation ground truth leads to best model performance. Combined with cell-tissue interaction and test-time augmentation we achieve 3rd place on the Overlapped Cell On Tissue (OCELOT) test set with mean F1-Score 0.7172.

@@ -1,15 +1,17 @@
-from calendar import c
-from math import e
+from typing import Any, Dict, List, Tuple
+
+import cv2
+import numpy as np
 import torch
 import onnxruntime as ort
-import numpy as np
-import cv2
 from skimage import feature
-from typing import Any, List, Tuple, Dict
 
 
 def softmax(x, axis=None):
-    """Compute the softmax function for the input array x along the specified dimension axis."""
+    """
+    Compute the softmax function for the input array x
+    along the specified dimension axis.
+    """
     e_x = np.exp(
         x - np.max(x, axis=axis, keepdims=True)
     )  # Subtracting max(x) for numerical stability
@@ -132,7 +134,7 @@ class Model:
 
     def find_cells(self, heatmap: np.ndarray) -> List[Tuple[int, int, int, float]]:
         """This function detects the cells in the output heatmap
-        From: https://github.com/lunit-io/ocelot23algo/blob/main/user/unet_example/unet.py
+        https://github.com/lunit-io/ocelot23algo/blob/main/user/unet_example/unet.py
 
         Parameters
         ----------

@@ -1,10 +1,14 @@
 from user.inference import Model
 from util import gcio
-from util.constants import (GC_CELL_FPATH, GC_DETECTION_OUTPUT_PATH,
-                            GC_METADATA_FPATH, GC_TISSUE_FPATH)
+from util.constants import (
+    GC_CELL_FPATH,
+    GC_DETECTION_OUTPUT_PATH,
+    GC_METADATA_FPATH,
+    GC_TISSUE_FPATH,
+)
 
 
-def process():
+def process() -> None:
     """Process a test patches. This involves iterating over samples,
     inferring and write the cell predictions
     """

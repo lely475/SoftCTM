@@ -1,21 +1,12 @@
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List
 
 import cv2
 import numpy as np
-import torch
 import onnxruntime as ort
-from skimage import feature
+import torch
 
-
-def softmax(x, axis=None):
-    """
-    Compute the softmax function for the input array x
-    along the specified dimension axis.
-    """
-    e_x = np.exp(
-        x - np.max(x, axis=axis, keepdims=True)
-    )  # Subtracting max(x) for numerical stability
-    return e_x / np.sum(e_x, axis=axis, keepdims=True)
+from util.find_cells import find_cells
+from util.utils import softmax
 
 
 class Model:
@@ -58,7 +49,7 @@ class Model:
 
         meta_pair = self.metadata[pair_id]
 
-        # tissue sgm on tissue patch + test time augmentation
+        # tissue segmentation + test time augmentation
         tissue_patch = (tissue_patch / 255.0).astype("float32")
         tissue_patch_tta = self.geometric_test_time_augmentation(tissue_patch)
         tissue_patch_tta = np.moveaxis(tissue_patch_tta, source=-1, destination=1)
@@ -99,7 +90,7 @@ class Model:
             cell_preds_tta.append(np.squeeze(cell_pred))
 
         cell_pred = self.reverse_tta(cell_preds_tta).astype("float32")
-        detected_cells = self.find_cells(cell_pred)
+        detected_cells = find_cells(cell_pred)
         return detected_cells
 
     def geometric_test_time_augmentation(self, img: np.ndarray) -> List[np.ndarray]:
@@ -131,52 +122,6 @@ class Model:
                 i += 1
         mean_pred = torch.mean(pred, dim=0)
         return mean_pred.numpy()
-
-    def find_cells(self, heatmap: np.ndarray) -> List[Tuple[int, int, int, float]]:
-        """This function detects the cells in the output heatmap
-        https://github.com/lunit-io/ocelot23algo/blob/main/user/unet_example/unet.py
-
-        Parameters
-        ----------
-        heatmap: np.ndarray
-            output heatmap of the model,  shape: [3, 1024, 1024]
-
-        Returns
-        -------
-            List[tuple]: for each predicted cell we provide the tuple (x, y, cls, score)
-        """
-        predicted_cells = []
-        arr = heatmap
-
-        # Background and non-background channels
-        bg, pred_wo_bg = np.split(arr, (1,), axis=0)
-        bg = np.squeeze(bg, axis=0)
-        obj = 1.0 - bg
-        arr = cv2.GaussianBlur(obj, (0, 0), sigmaX=3)
-
-        # List[y, x]
-        peaks = feature.peak_local_max(
-            arr, min_distance=3, exclude_border=0, threshold_abs=0.0
-        )
-
-        maxval = np.max(pred_wo_bg, axis=0)
-        maxcls_0 = np.argmax(pred_wo_bg, axis=0)
-
-        # Filter out peaks if background score dominates
-        peaks = np.array(
-            [peak for peak in peaks if bg[peak[0], peak[1]] < maxval[peak[0], peak[1]]]
-        )
-        if len(peaks) == 0:
-            return []
-
-        # Get score and class of the peaks
-        scores = maxval[peaks[:, 0], peaks[:, 1]]
-        peak_class = maxcls_0[peaks[:, 0], peaks[:, 1]]
-
-        predicted_cells = [
-            (x, y, c + 1, float(s)) for [y, x], c, s in zip(peaks, peak_class, scores)
-        ]
-        return predicted_cells
 
     def crop_tissue_sample_for_cell_sgm(
         self,

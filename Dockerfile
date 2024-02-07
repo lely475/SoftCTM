@@ -26,7 +26,7 @@ RUN python -m pip install --user -U pip && python -m pip install --user pip-tool
 COPY ./ /opt/app/
 
 RUN pip install --no-cache-dir --upgrade pip \
-  && pip install --no-cache-dir -r requirements.txt
+  && pip install --no-cache-dir -r requirements_docker.txt
 
 COPY --chown=user:user process.py /opt/app/
 

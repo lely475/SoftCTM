@@ -2,8 +2,8 @@
 
 # SoftCTM: Cell detection by soft instance segmentation and consideration of cell-tissue interaction
 
-In this repository, you can find the source code to recreate our [Grand Challenge OCELOT 23](https://ocelot2023.grand-challenge.org/) **algorithm container**.
-It provides a pan-cancer (trained on kidney, head-and-neck, prostate, stomach, endometrium, and bladder samples) deep-learning model for detecting tumor and background cells in H&E whole slide images. This makes it directly applicable for tasks such as tumor content estimation.
+In this repository, you can find the source code to recreate our [Grand Challenge OCELOT 23](https://ocelot2023.grand-challenge.org/) **algorithm container**. 
+It provides a pan-cancer (trained on kidney, head-and-neck, prostate, stomach, endometrium, and bladder samples) deep-learning model for detecting tumor and background cells in H&E images. This makes it directly applicable for tasks such as tumor content estimation. We also provide source code to run our algorithm on whole slide images.
 For more information check out our [paper on the method](https://arxiv.org/abs/2312.12151), as well as [OCELOT Challenge 2023](https://ocelot2023.grand-challenge.org/) and [OCELOT dataset](https://lunit-io.github.io/research/publications/ocelot/).
 
 ## Our algorithm
@@ -12,10 +12,49 @@ Detecting and classifying cells in histopathology whole-slide images is a core t
 ![inference_pipeline](https://github.com/lely475/ocelot23algo/assets/62755943/27c26f06-65c6-431c-8774-2182818bffe4)
 
 ## Download pretrained models
-Please download our pretrained tissue segmentation and cell detection model [here](https://1drv.ms/f/s!Aqry0_PzRNA6gdEhYsuOSooj7PP-Gg?e=9kQiE2).
+Please download our pretrained tissue segmentation and cell detection models [here](https://1drv.ms/f/s!Aqry0_PzRNA6gdEhYsuOSooj7PP-Gg?e=9kQiE2).
 Create a folder `onnx` on the top-level of the repository and add the models there.
 
-## Build the docker image
+## Whole slide image inference
+We provide the script `softctm_wsi_inference.py` to run WSI inference using our algorithm.
+To improve efficiency we are not applying test-time augmentation and do not use a larger FOV for tissue segmentation.
+We additionally provide a 20x version of the cell detection algorithm to allow broader applicability and faster throughput.
+
+### Install requirements
+Please run to ensure all required packages are isntalled:
+`pip install -r requirements.txt`
+
+### Configure parameters
+Please adapt the parameters in the script according to your requirements:
+```python
+mode: Literal["20x", "50x"] = "50x"  # original 50x and retrained 20x version
+data_path = ""    # Add data directory containing (only!) wsis
+output_path = ""  # Add output path
+tile_size = 1024  # SoftCTM input tile size
+visualize = True  # Creates cell markups
+```
+
+In case you only want to run the algorithm on a region of interest (ROI) instead of the whole slide, you can add logic to load them from file (expected as a 0,1 numpy mask, where 0: ignored region, 1: ROI) in [wsi_inferer.py](util/wsi_inferer.py#229):
+```python
+roi_mask = load_roi_mask(roi_path="", f=f)  # TODO Add path to your roi mask
+```
+
+### Run script
+`python softctm_wsi_inference.py`
+
+### Script outputs
+The script produces the following files:
+- detected_cells.csv: Dataset-level csv, containing tumor and background cell (tc, bc) counts for each WSI. You can easily compute the tumor purity as: `tpe = tc/(tc+bc)`
+- cell_csvs: Slide-specific csv files with detailed cell detections for each slide (x-,y-coordinates, class label (1: bc, 2: tc), confidence, re-scale factor). 
+
+If you enabled visualization you the following additional directories exist:
+- overlays: Original WSI with marked cell detections (tc: blue, bc: yellow).
+- mask: Mask with detected cells (tc: blue, bc: yellow)
+
+## Reproduce OCELOT results
+To reproduce our OCELOT results follow the below steps to create the docker container and infere it on the OCELOT test set.
+
+### Build the docker image
 
 Build our docker image:
 
@@ -23,7 +62,7 @@ Build our docker image:
 bash build.sh
 ```
 
-## Testing docker image
+### Testing docker image
 
 The script `test.sh` will create the image, run a container and verify that the output file `cell_classification.json` is generated at the designated directory. To do so, simply run the following command:
 
@@ -31,7 +70,7 @@ The script `test.sh` will create the image, run a container and verify that the 
 bash test.sh
 ```
 
-## Export algorithm docker image
+### Export algorithm docker image
 
 Generate the `tar` file containing the algorithm docker image:
 
@@ -39,7 +78,7 @@ Generate the `tar` file containing the algorithm docker image:
 bash export.sh
 ```
 
-## Run inference
+### Run inference
 
 You can run inference using the algorithm docker image with the following command, add your desired input and output paths where indicated:
 ```bash

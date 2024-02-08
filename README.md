@@ -3,7 +3,7 @@
 # SoftCTM: Cell detection by soft instance segmentation and consideration of cell-tissue interaction
 
 In this repository, you can find the source code to recreate our [Grand Challenge OCELOT 23](https://ocelot2023.grand-challenge.org/) **algorithm container**. 
-It provides a pan-cancer (trained on kidney, head-and-neck, prostate, stomach, endometrium, and bladder samples) deep-learning model for detecting tumor and background cells in H&E images. This makes it directly applicable for tasks such as tumor content estimation. 
+It provides a multi-organ (trained on kidney, head-and-neck, prostate, stomach, endometrium, and bladder samples) deep-learning model for detecting tumor and background cells in H&E images. This makes it directly applicable for tasks such as tumor content estimation. 
 
 We provide source code to:
 1. Run our algorithm on whole slide images.

@@ -9,6 +9,7 @@ if __name__ == "__main__":
     data_path = ""  # Add Data directory containing wsis
     output_path = ""  # Add output path
     tile_size = 1024  # SoftCTM input tile size
+    batch_size = 8  # Batch size for inference, lower if RAM is exceeded
     visualize = True  # Creates cell markups
     ######################################################################
 
@@ -19,4 +20,6 @@ if __name__ == "__main__":
 
     # Infere SoftCTM
     inferer = SoftCTM_WSI_Inferer(onnx_path, tissue_sgm_onnx_path)
-    inferer.predict(data_path, desired_mpp, tile_size, output_path, visualize)
+    inferer.predict(
+        data_path, desired_mpp, tile_size, output_path, batch_size, visualize
+    )

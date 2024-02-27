@@ -151,6 +151,8 @@ class WSI_Info:
                 round(y_lower_m * self.f) : round(y_lower_m * self.f) + tile_size,
                 round(x_lower_m * self.f) : round(x_lower_m * self.f) + tile_size,
             ]
+            assert tile.shape == (tile_size, tile_size, 3)
+            tiles.append(tile)
         slide.close()
         return tiles
 

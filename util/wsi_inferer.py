@@ -106,7 +106,7 @@ class SoftCTM_WSI_Inferer:
 
             # 3. Predict on tiles
             for x_coords, y_coords in tqdm(
-                zip(b_x, b_y), desc="Predict on tiles", total=len(b_x)
+                zip(b_x, b_y), desc=f"Predict on {wsi_info.name} tiles", total=len(b_x)
             ):
                 # Load tiles
                 tiles = wsi_info.load_tiles(x_coords, y_coords, tile_size)
@@ -230,8 +230,7 @@ class SoftCTM_WSI_Inferer:
         for wsi_file, wsi_name in tqdm(
             zip(wsi_paths, wsis), desc="Predict wsi", total=len(wsis)
         ):
-            # 1. Load WSI
-            print(f"\nLoad {wsi_file}")
+            # 1. Load WSI Info
             wsi_info = WSI_Info(wsi_file, desired_mpp)
 
             roi_mask = load_roi_mask(

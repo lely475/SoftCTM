@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 from util.constants import NUM_CELL_CLASSES, TISSUE_SGM_MPP
 from util.find_cells import find_cells
-from util.utils import batch, load_roi_mask, load_wsi, softmax, tile_image
+from util.utils import WSI_Info, batch, get_vis_level, load_roi_mask, softmax
 from util.visualize import visualize_prediction
 
 
@@ -70,8 +70,7 @@ class SoftCTM_WSI_Inferer:
 
     def predict_wsi(
         self,
-        wsi: np.ndarray,
-        wsi_name: str,
+        wsi_info: WSI_Info,
         tile_size: int,
         output_path: str,
         desired_mpp: float,
@@ -86,26 +85,32 @@ class SoftCTM_WSI_Inferer:
         4. Recombine tile prediction into whole slide level prediction"""
 
         if not save_predictions or not os.path.exists(
-            f"{output_path}/npy/{wsi_name}.npy"
+            f"{output_path}/npy/{wsi_info.name}.npy"
         ):
             pred_cells = []
             mask = np.zeros(
-                (NUM_CELL_CLASSES, wsi.shape[0], wsi.shape[1]), dtype=np.float16
+                (NUM_CELL_CLASSES, wsi_info.shape_target[0], wsi_info.shape_target[1]),
+                dtype=np.float16,
             )
             counter = np.zeros_like(mask)
 
             #  1. Tiling image into tiles of size tile_size x tile_size
-            all_tiles, all_x, all_y = tile_image(
-                wsi, tile_size, overlap=tile_size // 4, roi_mask=roi_mask
+            all_x, all_y = wsi_info.tile_image(
+                tile_size,
+                overlap=tile_size // 4,
+                roi_mask=roi_mask,
             )
 
             # 2. Batch tiles
-            b_tiles, b_x, b_y = batch(all_tiles, bs), batch(all_x, bs), batch(all_y, bs)
+            b_x, b_y = batch(all_x, bs), batch(all_y, bs)
 
             # 3. Predict on tiles
-            for tiles, x_coords, y_coords in tqdm(
-                zip(b_tiles, b_x, b_y), desc="Predict on tiles", total=len(b_tiles)
+            for x_coords, y_coords in tqdm(
+                zip(b_x, b_y), desc="Predict on tiles", total=len(b_x)
             ):
+                # Load tiles
+                tiles = wsi_info.load_tiles(x_coords, y_coords, tile_size)
+
                 # Tissue segmentation prediction
                 if self._use_tissue_pred:
                     tissue_pred = self.predict_tissue_sgm(tiles, desired_mpp)
@@ -122,6 +127,7 @@ class SoftCTM_WSI_Inferer:
 
                 # Save tile in full wsi prediction mask
                 for pred, x, y in zip(pred_sgm, x_coords, y_coords):
+                    x, y = round(x * wsi_info.f), round(y * wsi_info.f)
                     mask[:, y : y + tile_size, x : x + tile_size] += pred
                     counter[:, y : y + tile_size, x : x + tile_size] += 1
 
@@ -135,10 +141,11 @@ class SoftCTM_WSI_Inferer:
                 mask[1:, roi_mask == 0] = 0
 
             # Detect cells in each tile
-            for tiles, x_coords, y_coords in tqdm(
-                zip(b_tiles, b_x, b_y), desc="Find cells", total=len(b_tiles)
+            for x_coords, y_coords in tqdm(
+                zip(b_x, b_y), desc="Find cells", total=len(b_x)
             ):
                 for x, y in zip(x_coords, y_coords):
+                    x, y = round(x * wsi_info.f), round(y * wsi_info.f)
                     pred = mask[:, y : y + tile_size, x : x + tile_size]
                     pred_cells_tile = np.array(
                         find_cells(
@@ -153,9 +160,9 @@ class SoftCTM_WSI_Inferer:
             # Save detected cells to npy
             os.makedirs(f"{output_path}/npy", exist_ok=True)
             pred_cells = np.array(pred_cells)
-            np.save(f"{output_path}/npy/{wsi_name}.npy", pred_cells)
+            np.save(f"{output_path}/npy/{wsi_info.name}.npy", pred_cells)
         else:
-            pred_cells = np.load(f"{output_path}/npy/{wsi_name}.npy")
+            pred_cells = np.load(f"{output_path}/npy/{wsi_info.name}.npy")
         return pred_cells
 
     def continue_run(
@@ -225,17 +232,19 @@ class SoftCTM_WSI_Inferer:
         ):
             # 1. Load WSI
             print(f"\nLoad {wsi_file}")
-            wsi, f = load_wsi(wsi_file, desired_mpp)
-            roi_mask = load_roi_mask(roi_path="", f=f)  # TODO Add path to your roi mask
+            wsi_info = WSI_Info(wsi_file, desired_mpp)
+
+            roi_mask = load_roi_mask(
+                roi_path="", level=wsi_info.level
+            )  # TODO Add path to your roi mask
             if roi_mask is not None:
                 assert (
-                    wsi.shape() == roi_mask.shape()
+                    wsi_info.shape_orig == roi_mask.shape()
                 ), "WSI and ROI mask shape do not match!"
 
             # 2. Detect cells with SoftCTM
             pred_cells = self.predict_wsi(
-                wsi=wsi,
-                wsi_name=wsi_name,
+                wsi_info=wsi_info,
                 tile_size=tile_size,
                 output_path=output_path,
                 bs=batch_size,
@@ -247,8 +256,11 @@ class SoftCTM_WSI_Inferer:
             bc.append(np.count_nonzero(pred_cells[:, 2] == 1))
 
             if visualize:
-                visualize_prediction(wsi, pred_cells, f, wsi_name, output_path)
+                vis_level = get_vis_level(wsi_info.level_dims, max_px_size=30000)
+                visualize_prediction(wsi_info, pred_cells, output_path, vis_level)
 
             # 3. Log results to file
-            self.wsi_level_csv(pred_cells, f, f"{output_path}/cell_csvs/{wsi_name}.csv")
+            self.wsi_level_csv(
+                pred_cells, wsi_info.f, f"{output_path}/cell_csvs/{wsi_name}.csv"
+            )
             self.dataset_level_csv(wsis, tc, bc, f"{output_path}/detected_cells.csv")

@@ -133,12 +133,19 @@ The source code and description is adapted from Lunits [OcelotAlgo23 repository]
 # Code Usage
 If you find this code helpful to your work and want to use it, please cite:
 ```
-@misc{schoenpflug2023softctm,
-      title={SoftCTM: Cell detection by soft instance segmentation and consideration of cell-tissue interaction}, 
-      author={Lydia A. Schoenpflug and Viktor H. Koelzer},
-      year={2023},
-      eprint={2312.12151},
-      archivePrefix={arXiv},
-      primaryClass={eess.IV}
+@InProceedings{10.1007/978-3-031-55088-1_10,
+author="Schoenpflug, Lydia Anette
+and Koelzer, Viktor Hendrik",
+editor="Ahmadi, Seyed-Ahmad
+and Pereira, S{\'e}rgio",
+title="SoftCTM: Cell Detection by Soft Instance Segmentation and Consideration of Cell-Tissue Interaction",
+booktitle="Graphs in Biomedical Image Analysis, and Overlapped Cell on Tissue Dataset for Histopathology",
+year="2024",
+publisher="Springer Nature Switzerland",
+address="Cham",
+pages="109--122",
+abstract="Detecting and classifying cells in histopathology H {\&}E stained whole-slide images is a core task in computational pathology, as it provides valuable insight into the tumor microenvironment. In this work we investigate the impact of ground truth formats on the models performance. Additionally, cell-tissue interactions are considered by providing tissue segmentation predictions as input to the cell detection model. We find that a ``soft'', probability-map instance segmentation ground truth leads to best model performance. Combined with cell-tissue interaction and test-time augmentation our Soft Cell-Tissue-Model (SoftCTM) achieves 0.7172 mean F1-Score on the Overlapped Cell On Tissue (OCELOT) test set, achieving the third best overall score in the OCELOT 2023 Challenge. The source code for our approach is made publicly available at https://github.com/lely475/ocelot23algo.",
+isbn="978-3-031-55088-1"
 }
+
 ```

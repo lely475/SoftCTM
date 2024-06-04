@@ -17,7 +17,7 @@ Detecting and classifying cells in histopathology whole-slide images is a core t
 ![inference_pipeline](https://github.com/lely475/lely475/assets/62755943/74c0b66e-caaf-496c-9ed3-a626aed1da3f)
 
 ## Download pretrained models
-Please download our pretrained tissue segmentation and cell detection models [here](https://onedrive.live.com/?authkey=%21AGLLjkqKI%2Dzz%5Fho&id=3AD044F3F3D3F2AA%2126785&cid=3AD044F3F3D3F2AA).
+Please download our pretrained tissue segmentation and cell detection models [here](https://drive.google.com/drive/folders/1gF4JQtQ7dxhM2pmkmCSv0bAKKPAIyBry?usp=sharing).
 Create a folder `onnx` on the top-level of the repository and add the models there.
 
 ## Whole slide image inference

@@ -86,7 +86,7 @@ class WSI_Info:
         roi_mask: Optional[np.ndarray] = None,
     ) -> Tuple[List[np.ndarray], List[int], List[int], np.ndarray]:
         """Tile image into tiles of size tile_size and with specified overlap"""
-        h, w = self.shape_orig
+        w, h = self.shape_orig
         if self.f != 1:
             tile_size = round(tile_size / self.f)
             overlap = round(overlap / self.f)
@@ -125,6 +125,7 @@ class WSI_Info:
     ) -> List[np.ndarray]:
         """Load tiles from wsi, use overlap to avoid resizing border artifacts"""
         slide = openslide.open_slide(self.path)
+        width, height = self.shape_orig
         tiles = []
         margin_px_orig = round(tile_size * margin / self.f)
         tile_size_orig = round(tile_size / self.f)
@@ -132,8 +133,8 @@ class WSI_Info:
             x_start = max(0, x - margin_px_orig)
             y_start = max(0, y - margin_px_orig)
             x_lower_m, y_lower_m = x - x_start, y - y_start
-            x_end = min(self.shape_orig[1], x + tile_size_orig + margin_px_orig)
-            y_end = min(self.shape_orig[0], y + tile_size_orig + margin_px_orig)
+            x_end = min(width, x + tile_size_orig + margin_px_orig)
+            y_end = min(height, y + tile_size_orig + margin_px_orig)
             x_upper_m = x_end - x - tile_size_orig
             y_upper_m = y_end - y - tile_size_orig
             w, h = x_end - x_start, y_end - y_start
@@ -151,7 +152,11 @@ class WSI_Info:
                 round(y_lower_m * self.f) : round(y_lower_m * self.f) + tile_size,
                 round(x_lower_m * self.f) : round(x_lower_m * self.f) + tile_size,
             ]
-            assert tile.shape == (tile_size, tile_size, 3)
+            assert tile.shape == (
+                tile_size,
+                tile_size,
+                3,
+            ), f"x_start {x_start}, x_end {x_end}, y_start {y_start}, y_end {y_end}, Tile shape {tile.shape}"
             tiles.append(tile)
         slide.close()
         return tiles

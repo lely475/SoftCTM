@@ -88,8 +88,9 @@ class SoftCTM_WSI_Inferer:
             f"{output_path}/npy/{wsi_info.name}.npy"
         ):
             pred_cells = []
+            width, height = wsi_info.shape_target
             mask = np.zeros(
-                (NUM_CELL_CLASSES, wsi_info.shape_target[0], wsi_info.shape_target[1]),
+                (NUM_CELL_CLASSES, height, width),
                 dtype=np.float16,
             )
             counter = np.zeros_like(mask)
@@ -127,7 +128,10 @@ class SoftCTM_WSI_Inferer:
 
                 # Save tile in full wsi prediction mask
                 for pred, x, y in zip(pred_sgm, x_coords, y_coords):
-                    x, y = round(x * wsi_info.f), round(y * wsi_info.f)
+                    assert round(x * wsi_info.f) - (width - tile_size - 1) <= 1
+                    assert round(y * wsi_info.f) - (height - tile_size - 1) <= 1
+                    x = min(round(x * wsi_info.f), width - tile_size - 1)
+                    y = min(round(y * wsi_info.f), height - tile_size - 1)
                     mask[:, y : y + tile_size, x : x + tile_size] += pred
                     counter[:, y : y + tile_size, x : x + tile_size] += 1
 
@@ -172,7 +176,7 @@ class SoftCTM_WSI_Inferer:
         print("Continue from previous run...")
         self._df = pd.read_csv(f"{output_path}/detected_cells.csv")
         done_wsis = self._df["wsi"].tolist()
-        missing_wsis = list(set(wsis).difference(done_wsis))
+        missing_wsis = sorted(list(set(wsis).difference(done_wsis)))
         missing_idxs = [wsis.index(wsi) for wsi in missing_wsis]
         wsi_paths = [wsi_paths[i] for i in missing_idxs]
         wsis = missing_wsis
@@ -227,8 +231,8 @@ class SoftCTM_WSI_Inferer:
         if os.path.exists(f"{output_path}/detected_cells.csv"):
             wsis, wsi_paths = self.continue_run(wsis, wsi_paths, output_path)
 
-        for wsi_file, wsi_name in tqdm(
-            zip(wsi_paths, wsis), desc="Predict wsi", total=len(wsis)
+        for idx, (wsi_file, wsi_name) in tqdm(
+            enumerate(zip(wsi_paths, wsis)), desc="Predict wsi", total=len(wsis)
         ):
             # 1. Load WSI Info
             wsi_info = WSI_Info(wsi_file, desired_mpp)
@@ -262,4 +266,6 @@ class SoftCTM_WSI_Inferer:
             self.wsi_level_csv(
                 pred_cells, wsi_info.f, f"{output_path}/cell_csvs/{wsi_name}.csv"
             )
-            self.dataset_level_csv(wsis, tc, bc, f"{output_path}/detected_cells.csv")
+            self.dataset_level_csv(
+                wsis[: idx + 1], tc, bc, f"{output_path}/detected_cells.csv"
+            )

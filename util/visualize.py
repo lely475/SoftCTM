@@ -22,12 +22,10 @@ def visualize_prediction(
     """
 
     wsi = wsi_info.load_wsi(level=level)
-    cv2.imwrite(f"{output_path}/overlays/{wsi_info.name}_wsi.jpg", wsi)
     f = 1 / (2**level)
     wsi = cv2.resize(
         wsi, None, fx=wsi_info.f, fy=wsi_info.f, interpolation=cv2.INTER_AREA
     )
-    cv2.imwrite(f"{output_path}/overlays/{wsi_info.name}_wsi.jpg", wsi)
     bgr_mask = np.zeros_like(wsi)
     for x, y, label, _ in pred_cells:
         cv2.circle(
@@ -40,7 +38,6 @@ def visualize_prediction(
 
     wsi = cv2.cvtColor(wsi, cv2.COLOR_RGB2BGR)
     overlay = cv2.addWeighted(wsi, 1.0, bgr_mask, 0.3, 0)
-    # bgr_mask[bgr_mask==0]
 
     # Save segmentation mask and overlay to file
     os.makedirs(f"{output_path}/overlays", exist_ok=True)

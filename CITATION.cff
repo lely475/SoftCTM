@@ -20,3 +20,28 @@ keywords:
 license: Attribution-NonCommercial
 message: If you use this software, please cite it using these metadata.
 repository-code: "https://github.com/lely475/SoftCTM"
+preferred-citation:
+  title: "SoftCTM: Cell Detection by Soft Instance Segmentation and Consideration of Cell-Tissue Interaction"
+  type: conference-paper
+  authors:
+  - family-names: "Schoenpflug"
+    given-names: "Lydia Anette"
+  - family-names: "Koelzer"
+    given-names: "Viktor Hendrik"
+  collection-title: "Graphs in Biomedical Image Analysis, and Overlapped Cell on Tissue Dataset for Histopathology" # booktitle
+  collection-type: "proceedings"
+  publisher:
+    name: "Springer Nature Switzerland"
+  location: "Cham"
+  isbn: "978-3-031-55088-1"
+  editors: 
+    - family-names: Ahmadi
+      given-names: Seyed-Ahmad
+    - family-names: Pereira
+      given-names: S{\'e}rgio
+  conference:
+    name: "MICCAI 2023" # series
+  doi: "10.1007/978-3-031-55088-1_10"
+  start: 109 # First page number
+  end: 122 # Last page number
+  year: 2024

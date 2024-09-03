@@ -62,13 +62,12 @@ class WSI_Info:
         self.name = os.path.basename(wsi_path).split(".")[0]
         self.desired_mpp = desired_mpp
         self.level = level
-        slide = openslide.open_slide(self.path)
-        self.level_dims = slide.level_dimensions
+        self.slide = openslide.open_slide(self.path)
+        self.level_dims = self.slide.level_dimensions
         orig_res = (
-            float(slide.properties[openslide.PROPERTY_NAME_MPP_X]) * 2**self.level
+            float(self.slide.properties[openslide.PROPERTY_NAME_MPP_X]) * 2**self.level
         )
         self.f = orig_res / self.desired_mpp
-        slide.close()
 
     @property
     def shape_orig(self):
@@ -116,57 +115,60 @@ class WSI_Info:
                     y_coords.append(top)
         return x_coords, y_coords
 
+    def load_tile(
+        self, x: int, y: int, tile_size: int, margin: int = 10
+    ) -> List[np.ndarray]:
+        """Load tiles from wsi, use overlap to avoid resizing border artifacts"""
+        width, height = self.shape_orig
+        tile_size_orig = round(tile_size / self.f)
+        x_start = max(0, x - margin)
+        y_start = max(0, y - margin)
+        x_lower_m, y_lower_m = x - x_start, y - y_start
+        x_end = min(width, x + tile_size_orig + margin)
+        y_end = min(height, y + tile_size_orig + margin)
+        x_upper_m = x_end - x - tile_size_orig
+        y_upper_m = y_end - y - tile_size_orig
+        w, h = x_end - x_start, y_end - y_start
+        tile = self.slide.read_region((x_start, y_start), self.level, (w, h))
+        tile = np.array(tile.convert("RGB"))
+        tile = cv2.resize(
+            tile,
+            dsize=(
+                tile_size + round((x_lower_m + x_upper_m) * self.f),
+                tile_size + round((y_lower_m + y_upper_m) * self.f),
+            ),
+            interpolation=cv2.INTER_AREA if self.f < 1 else cv2.INTER_CUBIC,
+        )
+        tile = tile[
+            round(y_lower_m * self.f) : round(y_lower_m * self.f) + tile_size,
+            round(x_lower_m * self.f) : round(x_lower_m * self.f) + tile_size,
+        ]
+        assert tile.shape == (
+            tile_size,
+            tile_size,
+            3,
+        ), f"x_start {x_start}, x_end {x_end}, y_start {y_start}, y_end {y_end}, Tile shape {tile.shape}"
+        return tile
+
     def load_tiles(
         self,
         x_coords: List[int],
         y_coords: List[int],
         tile_size: int,
-        margin: float = 0.3,
+        margin: int = 10,
     ) -> List[np.ndarray]:
         """Load tiles from wsi, use overlap to avoid resizing border artifacts"""
-        slide = openslide.open_slide(self.path)
-        width, height = self.shape_orig
         tiles = []
-        margin_px_orig = round(tile_size * margin / self.f)
-        tile_size_orig = round(tile_size / self.f)
+
         for x, y in zip(x_coords, y_coords):
-            x_start = max(0, x - margin_px_orig)
-            y_start = max(0, y - margin_px_orig)
-            x_lower_m, y_lower_m = x - x_start, y - y_start
-            x_end = min(width, x + tile_size_orig + margin_px_orig)
-            y_end = min(height, y + tile_size_orig + margin_px_orig)
-            x_upper_m = x_end - x - tile_size_orig
-            y_upper_m = y_end - y - tile_size_orig
-            w, h = x_end - x_start, y_end - y_start
-            tile = slide.read_region((x_start, y_start), self.level, (w, h))
-            tile = np.array(tile.convert("RGB"))
-            tile = cv2.resize(
-                tile,
-                dsize=(
-                    tile_size + round((x_lower_m + x_upper_m) * self.f),
-                    tile_size + round((y_lower_m + y_upper_m) * self.f),
-                ),
-                interpolation=cv2.INTER_AREA if self.f < 1 else cv2.INTER_CUBIC,
-            )
-            tile = tile[
-                round(y_lower_m * self.f) : round(y_lower_m * self.f) + tile_size,
-                round(x_lower_m * self.f) : round(x_lower_m * self.f) + tile_size,
-            ]
-            assert tile.shape == (
-                tile_size,
-                tile_size,
-                3,
-            ), f"x_start {x_start}, x_end {x_end}, y_start {y_start}, y_end {y_end}, Tile shape {tile.shape}"
+            tile = self.load_tile(x, y, tile_size, margin)
             tiles.append(tile)
-        slide.close()
         return tiles
 
     def load_wsi(self, level: int):
-        slide = openslide.open_slide(self.path)
-        level = slide.level_count - 1 if level > slide.level_count else level
-        wsi = slide.read_region((0, 0), level, slide.level_dimensions[level])
+        level = self.slide.level_count - 1 if level > self.slide.level_count else level
+        wsi = self.slide.read_region((0, 0), level, self.slide.level_dimensions[level])
         wsi = np.array(wsi.convert("RGB"))
-        slide.close()
         return wsi
 
 

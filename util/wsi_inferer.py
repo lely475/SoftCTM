@@ -226,7 +226,7 @@ class SoftCTM_WSI_Inferer:
         tc = []
         bc = []
         wsi_paths = sorted(glob(f"{data_path}/*"))
-        assert len(wsi_paths) > 0, f"No files were found in {wsi_paths}!"
+        assert len(wsi_paths) > 0, f"No files were found in {data_path}!"
         wsis = [os.path.basename(f).split(".")[0] for f in wsi_paths]
         if os.path.exists(f"{output_path}/detected_cells.csv"):
             wsis, wsi_paths = self.continue_run(wsis, wsi_paths, output_path)

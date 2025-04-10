@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 from util.constants import NUM_CELL_CLASSES, TISSUE_SGM_MPP
 from util.find_cells import find_cells
-from util.utils import WSI_Info, batch, get_vis_level, load_roi_mask, softmax
+from util.utils import WSI_Info, data_generator, get_vis_level, load_roi_mask, softmax, save_mask_with_tiles
 from util.visualize import visualize_prediction
 
 
@@ -101,13 +101,16 @@ class SoftCTM_WSI_Inferer:
                 overlap=tile_size // 4,
                 roi_mask=roi_mask,
             )
+            save_mask_with_tiles(wsi_info, roi_mask, all_x, all_y, round(tile_size / wsi_info.f), output_path, wsi_info.name)
 
             # 2. Batch tiles
-            b_x, b_y = batch(all_x, bs), batch(all_y, bs)
+            assert len(all_x) == len(all_y), f"Mismatch in x_coords and y_coords length: {len(x_coords)}!={len(y_coords)}"
+            num_samples = len(all_x)
+            bs = num_samples if num_samples < bs else bs
 
             # 3. Predict on tiles
             for x_coords, y_coords in tqdm(
-                zip(b_x, b_y), desc=f"Predict on {wsi_info.name} tiles", total=len(b_x)
+                data_generator(all_x, all_y, bs), desc=f"Predict on {wsi_info.name} tiles, orig mpp={wsi_info.mpp}", total=num_samples//bs+1
             ):
                 # Load tiles
                 tiles = wsi_info.load_tiles(x_coords, y_coords, tile_size)
@@ -122,7 +125,8 @@ class SoftCTM_WSI_Inferer:
                     tiles = np.concatenate((tiles, tissue_pred), axis=1)
 
                 # Cell detection prediction
-                ort_inputs = {self._ort_session.get_inputs()[0].name: np.array(tiles)}
+                tiles = np.array(tiles)
+                ort_inputs = {self._ort_session.get_inputs()[0].name: tiles}
                 logits_sgm = self._ort_session.run(None, ort_inputs)[0]
                 pred_sgm = softmax(logits_sgm, dim=1)
 
@@ -141,12 +145,13 @@ class SoftCTM_WSI_Inferer:
 
             # Set non-ROI area prediction to 100% background
             if roi_mask is not None:
-                mask[0, roi_mask == 0] = 1
-                mask[1:, roi_mask == 0] = 0
+               roi_mask = cv2.resize(roi_mask, dsize=(width, height))
+               mask[0, roi_mask == 0] = 1
+               mask[1:, roi_mask == 0] = 0
 
             # Detect cells in each tile
             for x_coords, y_coords in tqdm(
-                zip(b_x, b_y), desc="Find cells", total=len(b_x)
+                data_generator(all_x, all_y, bs), desc="Find cells", total=num_samples//bs+1
             ):
                 for x, y in zip(x_coords, y_coords):
                     x, y = round(x * wsi_info.f), round(y * wsi_info.f)
@@ -186,8 +191,8 @@ class SoftCTM_WSI_Inferer:
         """Generates and saves csv with all cells detected in wsi"""
         df = pd.DataFrame(
             {
-                "x": pred_cells[:, 0],
-                "y": pred_cells[:, 1],
+                "x": pred_cells[:, 0].astype("int"),
+                "y": pred_cells[:, 1].astype("int"),
                 "label": pred_cells[:, 2].astype("int"),
                 "confidence": pred_cells[:, 3],
                 "f": [f] * int(pred_cells.shape[0]),
@@ -236,14 +241,12 @@ class SoftCTM_WSI_Inferer:
         ):
             # 1. Load WSI Info
             wsi_info = WSI_Info(wsi_file, desired_mpp)
-
-            roi_mask = load_roi_mask(
-                roi_path="", level=wsi_info.level
-            )  # TODO Add path to your roi mask
+            # TODO Add path to your roi mask
+            roi_mask = load_roi_mask(None, shape=wsi_info.level_dims[0])
             if roi_mask is not None:
                 assert (
-                    wsi_info.shape_orig == roi_mask.shape()
-                ), "WSI and ROI mask shape do not match!"
+                    wsi_info.shape_orig[::-1] == roi_mask.shape
+                ), f"WSI and ROI mask shape do not match: wsi_info.shape_orig={wsi_info.shape_orig}, roi_mask.shape={roi_mask.shape}!"
 
             # 2. Detect cells with SoftCTM
             pred_cells = self.predict_wsi(
@@ -252,9 +255,10 @@ class SoftCTM_WSI_Inferer:
                 output_path=output_path,
                 bs=batch_size,
                 desired_mpp=desired_mpp,
-                roi_mask=roi_mask,
+                roi_mask=roi_mask, 
                 save_predictions=save_predictions,
             )
+
             tc.append(np.count_nonzero(pred_cells[:, 2] == 2))
             bc.append(np.count_nonzero(pred_cells[:, 2] == 1))
 

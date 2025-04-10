@@ -22,7 +22,7 @@ def visualize_prediction(
     """
 
     wsi = wsi_info.load_wsi(level=level)
-    f = 1 / (2**level)
+    f = 1/round(wsi_info.level_downsamples[level])
     wsi = cv2.resize(
         wsi, None, fx=wsi_info.f, fy=wsi_info.f, interpolation=cv2.INTER_AREA
     )

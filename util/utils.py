@@ -1,37 +1,47 @@
 import os
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Dict, Generator
 
 import cv2
 import numpy as np
 import openslide
+from shapely.geometry import shape as shapely_shape, MultiPolygon, Polygon
+from rasterio import features
+from xml.etree import ElementTree as ET
+from PIL import Image, ImageDraw
+
+def xml_to_mask(xml_path: str, shape: Optional[Tuple[int, int]] = None) -> np.ndarray:
+    xml = open(xml_path).read()
+    root = ET.fromstring(xml)
+    inclusions, exclusions = [], []
+    for region in root.findall('.//Region'):
+        points = [(int(v.attrib['X']), int(v.attrib['Y'])) for v in region.find('.//Vertices')]
+        if region.attrib.get('NegativeROA') == '1':
+            exclusions.append(points)
+        else:
+            inclusions.append(points)
+    if shape is None:
+        xs, ys = zip(*[pt for reg in inclusions + exclusions for pt in reg])
+        shape = (max(ys) + 1, max(xs) + 1)
+    mask = Image.new('1', shape, 0)
+    draw = ImageDraw.Draw(mask)
+    for poly in inclusions:
+        draw.polygon(poly, outline=1, fill=1)
+    for poly in exclusions:
+        draw.polygon(poly, outline=0, fill=0)
+    return np.array(mask, dtype=np.uint8)
 
 
-def load_roi_mask(level: int, roi_path: str = "") -> Optional[np.ndarray]:
-    """
-    Load region of interested mask:
-    FIXME Adapt code to match your roi mask format
-    Mask==1: Area considered for cell detection
-    Mask==0: Area ingored for cell detection
-    """
-    if os.path.exists(roi_path):
-        roi_mask = np.load(roi_path)
-        assert np.all(
-            np.isin(roi_mask, [0, 1])
-        ), "ROI Mask should only contain 0 and 1!"
-        f = 1 / (2**level)
-        roi_mask = cv2.resize(
-            roi_mask, dsize=None, fx=f, fy=f, interpolation=cv2.INTER_NEAREST
-        )
-    else:
-        Warning(
-            "No region of interest mask found at",
-            roi_path,
-            "running cell detection on full WSI.",
-        )
-        roi_mask = None
-    return roi_mask
+def load_roi_mask(shape: Tuple[int, int], roi_path: str = "") -> Optional[np.ndarray]:
+    """Load region of interest mask from file."""
+    if not os.path.exists(roi_path):
+        print(f"Warning: No region of interest mask found at {roi_path}, running cell detection on full WSI.")
+        return None
+    
+    if  os.path.basename(roi_path).split(".")[-1] == "annotations":
+        mask = xml_to_mask(roi_path, shape=shape)
+    return mask
 
-
+    
 def load_wsi(
     wsi_path: str, desired_mpp: float, level: int = 0
 ) -> Tuple[np.ndarray, float]:
@@ -70,6 +80,11 @@ class WSI_Info:
         self.f = orig_res / self.desired_mpp
 
     @property
+    def level_downsamples(self):
+        return self.slide.level_downsamples
+
+
+    @property
     def shape_orig(self):
         return self.level_dims[self.level]
 
@@ -77,6 +92,11 @@ class WSI_Info:
     def shape_target(self):
         shape = self.level_dims[self.level]
         return tuple(round(v * self.f) for v in shape)
+
+    @property
+    def mpp(self):
+        return float(self.slide.properties[openslide.PROPERTY_NAME_MPP_X])
+
 
     def tile_image(
         self,
@@ -95,7 +115,6 @@ class WSI_Info:
 
         x_coords = []
         y_coords = []
-
         for y in range(y_tiles):
             for x in range(x_tiles):
                 left = x * stride
@@ -109,7 +128,6 @@ class WSI_Info:
                     if right > w:
                         left = w - tile_size
                         right = w
-
                 if roi_mask is None or roi_mask[top:bottom, left:right].sum() > 0:
                     x_coords.append(left)
                     y_coords.append(top)
@@ -171,6 +189,8 @@ class WSI_Info:
         wsi = np.array(wsi.convert("RGB"))
         return wsi
 
+    def get_thumbnail(self, shape: Tuple[int, int]=(1000,1000)):
+        return self.slide.get_thumbnail(shape)
 
 def get_vis_level(level_dimensions: List[Tuple[int, int]], max_px_size: int) -> int:
     for i, (width, height) in enumerate(level_dimensions):
@@ -182,15 +202,14 @@ def get_vis_level(level_dimensions: List[Tuple[int, int]], max_px_size: int) -> 
     )
 
 
-def batch(arr_list: List[np.ndarray], batch_size: int) -> List[np.ndarray]:
+def data_generator(x_coords: List[np.ndarray], y_coords: List[np.ndarray], batch_size: int) -> Generator:
     """Batch array into batches of size batch_size"""
 
-    batch_size = len(arr_list) if len(arr_list) < batch_size else batch_size
-    return [
-        np.stack(arr_list[i : i + batch_size], axis=0)
-        for i in range(0, len(arr_list), batch_size)
-    ]
-
+    #assert len(x_coords) == len(y_coords), f"Mismatch in x_coords and y_coords length: {len(x_coords)}!={len(y_coords)}"
+    #num_samples = len(x_coords)
+    #batch_size = num_samples if num_samples < batch_size else batch_size
+    for i in range(0, len(x_coords), batch_size):
+        yield np.stack(x_coords[i : i + batch_size], axis=0).astype("int").tolist(), np.stack(y_coords[i : i + batch_size], axis=0).astype("int").tolist()
 
 def softmax(x, dim=None):
     """
@@ -200,3 +219,36 @@ def softmax(x, dim=None):
     e_x = np.exp(x - np.max(x, axis=dim, keepdims=True))
     # Subtracting max(x) for numerical stability
     return e_x / np.sum(e_x, axis=dim, keepdims=True)
+
+
+
+def save_mask_with_tiles(
+    wsi_info: WSI_Info,
+    roi_mask: np.ndarray,
+    x_coords: List[int],
+    y_coords: List[int],
+    tile_size: int,
+    output_path: str,
+    wsi_name: str,
+):
+    tn = wsi_info.get_thumbnail()
+    tn_size = tn.size
+    mask_img = np.array(Image.fromarray((roi_mask * 255).astype(np.uint8)).resize(tn.size)) > 0
+    gray = np.mean(np.array(tn), axis=2, keepdims=True).astype(np.uint8)
+    blended = Image.fromarray(np.where(mask_img[..., None], np.array(tn), gray))
+    scale_x = tn_size[0] / wsi_info.shape_orig[0] #roi_mask.shape[0]
+    scale_y = tn_size[1] / wsi_info.shape_orig[1] #roi_mask.shape[1]
+    draw = ImageDraw.Draw(blended)
+
+    for x, y in zip(x_coords, y_coords):
+        rect = [
+            x * scale_x,
+            y * scale_y,
+            (x + tile_size) * scale_x,
+            (y + tile_size) * scale_y
+        ]
+        draw.rectangle(rect, outline="red", width=1)
+
+    os.makedirs(f"{output_path}/mask_tns", exist_ok=True)
+    blended.save(f"{output_path}/mask_tns/{wsi_name}.png")
+

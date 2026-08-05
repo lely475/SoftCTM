@@ -32,19 +32,16 @@ pip install -r requirements.txt
 ```
 
 ### Configure parameters
-Please adapt the parameters in the script according to your requirements:
+Please adapt the parameters at the top of [softctm_wsi_inference.py](softctm_wsi_inference.py) according to your requirements:
 ```python
-mode: Literal["20x", "50x"] = "50x"  # original 50x and retrained 20x version
-data_path = ""    # Add data directory containing (only!) wsis
-output_path = ""  # Add output path
-tile_size = 1024  # SoftCTM input tile size
-visualize = True  # Creates cell markups
+MODE: Literal["20x", "50x"] = "20x"  # original 50x model, or the retrained 20x version
+DATA_PATH = ""    # directory containing (only!) WSIs
+OUTPUT_PATH = ""  # directory results are written to
+TILE_SIZE = 1024  # SoftCTM input tile size
+BATCH_SIZE = 8    # lower if you run out of GPU/CPU memory
+VISUALIZE = True  # save cell-detection overlay images
 ```
-
-In case you only want to run the algorithm on a region of interest (ROI) instead of the whole slide, you can add logic to load them from file (expected as a 0,1 numpy mask, where 0: ignored region, 1: ROI) in [wsi_inferer.py](https://github.com/lely475/ocelot23algo/blob/f975e726552ead08e48ef04e2cf86eb27422cc47/util/wsi_inferer.py#L229):
-```python
-roi_mask = load_roi_mask(roi_path="", f=f)  # TODO Add path to your roi mask
-```
+The WSI's pyramid level closest to the target resolution is picked automatically, and inference only runs where there's tissue: if you don't provide a region of interest (ROI) mask, tissue vs. background is detected automatically (Otsu thresholding on a thumbnail). To use your own ROI instead, pass a path in `predict()`'s call to `load_roi_mask` in [wsi_inferer.py](util/wsi_inferer.py) - accepted formats are a `.png`/`.npy` mask (0: ignored region, 1: ROI) or an ASAP `.annotations` XML file.
 
 ### Run script
 ```
@@ -52,13 +49,15 @@ python softctm_wsi_inference.py
 ```
 
 ### Script outputs
-The script produces the following files:
+The script produces the following files under `OUTPUT_PATH`:
 - `detected_cells.csv`: Dataset-level csv, containing tumor and background cell (tc, bc) counts for each WSI. You can easily compute the tumor purity as: `tpe = tc/(tc+bc)`
-- `cell_csvs`: Slide-specific csv files with detailed cell detections for each slide (x-,y-coordinates, class label (1: bc, 2: tc), confidence, re-scale factor). 
+- `cell_csvs/`: Slide-specific csv files with detailed cell detections for each slide (x-,y-coordinates, class label (1: bc, 2: tc), confidence, mpp - the resolution the x,y coordinates are given at).
+- `npy/`: Cached raw detections per slide, used to skip recomputation on a rerun.
+- `mask_tns/`: Thumbnail of each slide with the ROI mask and tile grid overlaid, for sanity-checking tiling/ROI setup.
 
-If you enabled visualization you the following additional directories exist:
-- `overlays`: Original WSI with marked cell detections (tc: blue, bc: yellow).
-- `masks`: Mask with detected cells (tc: blue, bc: yellow)
+If you enabled visualization the following additional directories exist:
+- `overlays/`: Original WSI with marked cell detections (tc: blue, bc: yellow).
+- `masks/`: Mask with detected cells (tc: blue, bc: yellow).
 
 ## Reproduce OCELOT results
 To reproduce our OCELOT results follow the below steps to create the docker container and infere it on the OCELOT test set.

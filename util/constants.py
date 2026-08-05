@@ -8,7 +8,7 @@ CELL_ID_TO_SHORT_NAME = {0: "BG", 1: "BC", 2: "TC"}
 NUM_CELL_CLASSES = 3
 TISSUE_SGM_MPP = 0.8  # 0.8mpp == 12.5x
 
-# Grand Challenge folders were input files can be found
+# Grand Challenge folders where input files can be found
 GC_CELL_FPATH = Path("/input/images/cell_patches/")
 GC_TISSUE_FPATH = Path("/input/images/tissue_patches/")
 

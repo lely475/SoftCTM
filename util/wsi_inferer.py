@@ -247,10 +247,11 @@ class SoftCTM_WSI_Inferer:
         df.to_csv(output_path, index=False)
 
     def dataset_level_csv(
-        self, wsis: List[str], tc: List[int], bc: List[int], output_path: str
+        self, wsi: str, tc: int, bc: int, output_path: str
     ) -> None:
         """Appends tumor/background cell counts for wsis to the dataset-level CSV at output_path."""
-        new_df = pd.DataFrame({"wsi": wsis, "tc": tc, "bc": bc})
+        tumor_content = tc / (tc + bc) if (tc + bc) > 0 else 0
+        new_df = pd.DataFrame({"wsi": wsi, "tc": tc, "bc": bc, "tumor_content": tumor_content})
         try:
             self._df = pd.concat((self._df, new_df))
         except AttributeError:
@@ -277,7 +278,6 @@ class SoftCTM_WSI_Inferer:
             wsis, wsi_paths = self.continue_run(wsis, wsi_paths, output_path)
 
         run_t0 = time.time()
-        total_tc = total_bc = 0
         for wsi_file, wsi_name in tqdm(zip(wsi_paths, wsis), desc="Predict wsi", total=len(wsis)):
             wsi_info = WSI_Info(wsi_file, desired_mpp)
             downsample = wsi_info.level_downsamples[wsi_info.level]
@@ -301,18 +301,15 @@ class SoftCTM_WSI_Inferer:
 
             tc = np.count_nonzero(pred_cells[:, 2] == 2)
             bc = np.count_nonzero(pred_cells[:, 2] == 1)
-            total_tc += tc
-            total_bc += bc
-            logger.info(f"{wsi_name}: {tc} tumor cells, {bc} background cells")
+            logger.info(f"{wsi_name}: {tc} tumor cells, {bc} background cells, tumor content={tc/(tc+bc):.3f}" if (tc + bc) > 0 else f"{wsi_name}: no cells detected")
 
             if visualize:
                 vis_level = get_vis_level(wsi_info.level_dims, max_px_size=30000)
                 visualize_prediction(wsi_info, pred_cells, output_path, vis_level)
 
             self.wsi_level_csv(pred_cells, desired_mpp, f"{output_path}/cell_csvs/{wsi_name}.csv")
-            self.dataset_level_csv([wsi_name], [tc], [bc], f"{output_path}/detected_cells.csv")
+            self.dataset_level_csv(wsi_name, tc, bc, f"{output_path}/detected_cells.csv")
 
         logger.info(
             f"Done: {len(wsis)} WSI(s) in {time.time() - run_t0:.1f}s, "
-            f"{total_tc} tumor cells / {total_bc} background cells total"
         )

@@ -28,6 +28,9 @@ share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
+*.ipynb
+wsi_inferer copy.py
+*.png
 MANIFEST
 
 # PyInstaller
